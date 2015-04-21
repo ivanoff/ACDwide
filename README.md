@@ -1,2 +1,2 @@
 # ACDwide
-automatic call distributor for asterisk
+Automatic call distributor for Asterisk PBX
