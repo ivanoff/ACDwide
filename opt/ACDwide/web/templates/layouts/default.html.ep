@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title><%= title %></title>
+<link rel="stylesheet" href="/css/main.css" />
+<meta charset="utf-8" />
+</head>
+<body>
+<header>
+  ACDwide manager
+  <ul id="utility-links" class="menu">
+    <li><a href="#">about</a></li>
+    <li><a href="#">contact</a></li>
+  </ul>
+</header>
+<nav>
+    <menu>
+      <ul id="nav-links">
+        <li>
+          <h2><a href="/">Home</a></h2>
+        </li>
+        <li>
+          <h2><a href="/operators">Operators</a></h2>
+        </li>
+        <li>
+          <h2><a href="#">Portfolio</a></h2>
+        </li>
+        <li>
+          <h2><a href="#">Our Team</a></h2>
+        </li>
+        <li>
+          <h2><a href="#">Location</a></h2>
+        </li>
+      </ul>
+    </menu>
+</nav>
+<section>
+    <div id="leftcontent">
+    <div class="grey_line"></div>
+
+<%= content %>
+
+    </div>
+</section>
+<footer>&copy; Copyright with Company.com 2015</footer>
+</body>
+</html>

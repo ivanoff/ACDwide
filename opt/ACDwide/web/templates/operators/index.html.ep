@@ -1,0 +1,13 @@
+% layout 'default';
+% title 'Operators';
+<table>
+<tbody>
+% foreach my $op ( @$operators ) { 
+<tr>
+%   foreach my $o ( @$op ) { 
+<td><%= $o %></td>
+%   }
+</tr>
+% }
+</tbody>
+</table>
