@@ -1,0 +1,77 @@
+#!/usr/bin/perl
+
+use strict;
+use SimplenessCMS::MAIN;
+
+{
+
+    '(.*)' => sub {
+	my $dd = '../data';
+        my ( $url, $subdomain ) = @_;
+
+	return 0 if $url =~ /\.\.\// || $subdomain =~ /\.\.\//;
+	my $lng = lang;
+#	use '.lang' subfolder
+	$dd .= '/.'.$1 if !is_default_lang && $subdomain =~ s/^($lng)\.(.*)/$2/;
+        $subdomain = join '/', reverse split /\./, $subdomain;
+	my $conf = eval { local $SIG{__DIE__}; do "$dd/$subdomain/config.pl" };
+
+    	unless ($url) {
+    	    redirect( $conf->{index} ) if $conf->{index};
+    	    foreach( 'index.htm', 'index.html', 'CONTENTS.htm', 'page.htm' ) {
+    		redirect($_) if -f "$dd/$subdomain/$_";
+    	    }
+	}
+
+	my $words_file = "$dd/words.txt";
+	if( -e $words_file ) {
+	    open my $f, '<', $words_file;
+	    while( <$f> ) {
+		my @add_words   = split ';', $_;
+		my @add_domains = split ',', shift @add_words;
+		next unless grep { /^$subdomain$/ } @add_domains;
+		push @{ $conf->{words} }, @add_words;
+	    }
+	    close $f;
+	}
+
+        my $url = "$dd/$subdomain/$url";
+
+        # Check for uppercase files
+	if ( ! -f "$dd/$subdomain/$url" ) {
+            my ($path, $file) = ($1, $2) if $url=~m%^(.*)/(.*?)$%;
+            my @res = grep {m%/$file$%i} <$path/*>;
+            $url = $res[0] if @res;
+        }
+
+#	return $conf->{index}." $dd/ $subdomain / $url" unless -f "$dd/$subdomain/$url";
+	return 0 unless -f $url;
+	open F, '<', $url;
+	my $content = join '', <F>;
+	close F;
+	$_ = $content;
+	s/\n/ /g;
+	s/<.*?>/\n/g;
+	s/&nbsp;/ /g;
+	my $header = /(\S.*)\n.*/? $1 : '';
+        $header =~ s/\s+/ /g;
+        $header =~ s/'/\'/g; #'
+	$header .= '. '.$conf->{header} if $header ne $conf->{header};
+	title $header;
+
+	$conf->{words} ||= [];
+	my $add  = '<b>'.$conf->{words}[int rand(int @{$conf->{words}}/10)].'</b>';
+	$add = $add.'. '.$conf->{words}[int rand(@{$conf->{words}})] for (1..7);
+	defaults { add_w => (@{$conf->{words}})? $add : undef };
+
+#	$add = $add.'.<br \>';
+#	$add = '' if @{$conf->{words}} <= 1; 
+#	if ($url =~ m%/$conf->{index}$% ) {
+#	    $add = $add.'<h1>'.$conf->{header}.'</h1>';
+#	    title $conf->{header};
+#	}
+#	$content = $add.$content;
+	return process('subdomain/index.tpl', { content => $content, header => $header, index => $conf->{index}||'' } );
+    },
+
+};

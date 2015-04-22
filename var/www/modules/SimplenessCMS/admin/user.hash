@@ -1,0 +1,12 @@
+#!/usr/bin/perl
+
+use strict;
+use MAIN;
+
+you_cannot 'view_users' or
+
+{
+
+'/user' => sub {'list of users'},
+
+};

@@ -1,0 +1,56 @@
+#!/usr/bin/perl
+
+use strict;
+use MAIN;
+
+you_cannot 'manage_gallery' or
+
+{
+
+    '/admin/images/browse' => sub {
+        header( 'clear', { no_cache => 1 } );
+        my $files = [ glob images('PATH').'/'.images('SIZE')->[0].'/*.*' ];
+        map { s%.*/%%g; } @$files;
+        process('admin/images/browse.tpl', {
+                        files => $files,
+                        path  => images('PATH'),
+                        size  => images('SIZE'),
+                    } );
+    },
+
+    '/admin/images/upload' => sub {
+
+        header ( 'clear', { no_cache => 1 } );
+
+        my ($file, $upload_size, $upload_align) = param( 'image', 'upload_size', 'upload_align' );
+        $upload_align = '' unless $upload_align =~ /^left|center|right$/;
+        (my $new_file = $file) =~ s/.*[\\\/]//;
+        my $upfile = $main::q->upload( 'image' );
+        open F, '>', images('PATH').'/'.$new_file;
+        print F $_ while <$upfile>;
+        close F;
+
+        foreach my $size ( @{images('SIZE')} ) {
+            make_path(images('PATH').'/'.$size);
+            resize ( images('PATH').'/'.$new_file, images('PATH').'/'.$size.'/'.$new_file, split( 'x', $size ) );
+        }
+
+        return process( 'admin/images/upload.tpl', { file=>$new_file, size=>$upload_size, 
+                                        align=>$upload_align, path=>images('PATH'), } );
+    },
+
+    '/admin/images/delete/(.*/)?(.*?)' => sub {
+        my ( $path, $name ) = ( $1 || '', $2 );
+        return 0 if !$name || $path =~ /\.\./;
+        unlink( images('PATH')."/$path/$_/$name" ) foreach ( @{images('SIZE')}, '' );
+        back;
+    },
+
+    '/admin/images/(un)?rotate/(.*/)?(.*?)' => sub {
+        my ( $d, $path, $name ) = ( $1, $2 || '', $3 );
+        return 0 if !$name || $path =~ /\.\./;
+        image_rotate( images('PATH')."/$path/$_/$name", $d? -90 : undef ) foreach ( @{images('SIZE')}, '' );
+        back;
+    },
+
+};

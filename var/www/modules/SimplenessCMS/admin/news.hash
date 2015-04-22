@@ -1,0 +1,75 @@
+#!/usr/bin/perl
+
+use strict;
+use MAIN;
+
+defaults { 
+    read_only => 1, 
+};
+
+you_cannot 'edit_content' or
+
+{
+
+    '/admin/news/add' => sub {
+        process( 'admin/news/add.tpl' );
+    },
+
+    '/admin/news/add/update' => sub {
+        my ( $lang, $date, $header, $body ) = param( 'lang', 'date', 'header', 'body' );
+        if ( $lang && $date && $header && $body ) {
+            my $news_key = sql( "SELECT MAX(news_key) k FROM base_news WHERE lang=?", lang );
+            $news_key->[0]{k} = 0 unless @$news_key;
+            sql( "INSERT INTO base_news ( news_date, lang, news_name, news_body, news_key ) VALUES ( ?, ?, ?, ?, ? )", 
+                                        $date, $lang, $header, $body, $news_key->[0]{k}+1 );
+        }
+    },
+
+    '/admin/news/edit/(\d+)' => sub {
+        my $news_id = $1;
+        my $n = sql( "SELECT * FROM base_news WHERE news_id=?", $1 );
+        if(param('name')) {
+            sql( "UPDATE base_news SET news_name=?, news_body=?, news_date=? WHERE news_id=?", 
+                        param('name'), param('body'), param('date'), $news_id );
+
+            $main::t->renew_content('news',$n->[0]{news_key});
+
+            return redirect2('news');
+        }
+        process('admin/news_add.tpl', { news_id=>$news_id, n=>$n } );
+    },
+
+    '/admin/news/(\d+)/update' => sub {
+        my $news_key = $1;
+        # check if any news with key eq news_key and add news if not
+        my $n = sql( "SELECT * FROM base_news WHERE news_key=? AND lang=?", $news_key, lang );
+        sql( "INSERT INTO base_news ( news_hidden, news_key, lang ) VALUES ( 1, ?, ? )", $news_key, lang ) unless $n->[0];
+        $_ = param('body');
+        if(param('page') eq 'date') {
+            sql ( "UPDATE base_news SET news_date=? WHERE news_key=?", $_ , $news_key);
+        } else {
+            if ( is_default_lang ) {
+                sql( "DELETE FROM base_news WHERE news_key=? AND lang!=?", $news_key, lang);
+            }
+            if(param('page') eq 'header') {
+                s/\<.*?\>//g;
+                sql ( "UPDATE base_news SET news_name=?, news_date=news_date 
+                        WHERE news_key=? AND lang=?", $_ , $news_key, lang);
+            }
+            if(param('page') eq 'body') {
+                sql ( "UPDATE base_news SET news_body=?, news_date=news_date 
+                        WHERE news_key=? AND lang=?", $_, $news_key, lang);
+            }
+            $main::t->renew_content('news', $news_key);
+        };
+    },
+
+    '/admin/news/delete/(\d+)' => sub {
+        sql( "DELETE FROM base_news WHERE news_key=?", $1 );
+    },
+
+    '/admin/news/hide/(1|0)/eye-(\d+)' => sub {
+        sql( "UPDATE base_news SET news_hidden=?, news_date=news_date WHERE news_key=?", $1, $2 );
+    },
+
+};

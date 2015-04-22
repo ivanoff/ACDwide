@@ -1,0 +1,198 @@
+#!/usr/bin/perl
+
+use strict;
+use utf8;
+use MAIN;
+use Spreadsheet::ParseExcel;
+use Spreadsheet::XLSX;
+use Text::CSV;
+use Digest::MD5 qw( md5_hex );
+use LWP::Simple;
+
+my $types = {
+    url      => undef,
+    header   => undef,
+    district => undef,
+    city     => undef,
+    street   => qr/str|ave|ул/i,
+    price    => qr/\d+([\._\s]?\d{3})*([\.,]?\d{2})?(USD|\$)?$/i,
+    price_2  => undef,
+    size     => qr/^\d+$/,
+    images   => qr/jpg|png/i,
+    video    => qr/youtube/i,
+    description    => undef,
+    coordinates    => qr/^\d+\.\d+,\s*\d+\.\d+$/,
+    cadastre_UA    => qr/\d{10}-\d{2}-\d{3}-\d{4}/,
+    cadastre_RU    => qr/\d{2}:\d{2}:\d{6}:\d{2}/,
+    '&lt;text&gt;' => undef,
+};
+
+defaults { 
+    read_only => 1, 
+    types     => [ sort keys %$types ], 
+};
+
+sub column_looks_like {
+    my $was = shift;
+    $_ = shift;
+    return $was if !$_ || /^\s*$/;
+
+    if ( /^[-+]?(\d*[.])?\d+$/ ) {
+        $was->{datatype} = 'float' if $was->{datatype} ne 'blob';
+    } else {
+        $was->{datatype} = 'blob';
+    }
+
+    foreach my $type ( keys %$types ) {
+        $was->{type} ||= $type if $types->{ $type } && $_ =~ $types->{ $type };
+    }
+
+    return $was;
+}
+
+you_cannot 'realtor_import' or
+
+{
+    '/admin/realtor/config' => sub {
+        if ( param('submit') ) {
+            my $h = sql "SELECT * FROM base_realtor_config WHERE column_id!=0";
+            foreach my $id ( map { $_->{column_id} } @$h ) {
+                sql( "UPDATE base_realtor_config
+                      SET type=?, dimension=?, hidden=?, details_hide=?, pdf_hide=? WHERE column_id=?", 
+                      param("type-$id"), param("dimension-$id"), param("hidden-$id")? 1 : 0
+                      , param("details_hide-$id")? 1 : 0, param("pdf_hide-$id")? 1 : 0, $id );
+            }
+
+            remove_tree( $::CONFIG->{cache_dir}.'/pdf' ) if -d $::CONFIG->{cache_dir}.'/pdf';
+
+            # prepare images
+            my $image_id = sql "SELECT column_id FROM base_realtor_config
+                                WHERE type = 'images' AND column_id!=0 AND hidden=0";
+            my $path = images('PATH').'/realtor/';
+            if ( @$image_id && ! -d $path ) {
+                make_path( $path.$_ ) foreach ( '', @{ images('SIZE') } );
+            }
+            foreach my $i ( @$image_id ) {
+                my $images_all = sql "SELECT `$i->{column_id}` i FROM base_realtor_data";
+                foreach my $images ( @$images_all ) {
+                    next if $images->{i} !~ /http/;
+                    my @images_new;
+                    my $images_to_update = $images->{i};
+                    $images->{i} =~ s/http/,http/g;
+                    my @i = grep { $_ } split /[,;\s]/, $images->{i};
+                    foreach my $url ( @i ) {
+                        my $filename =  md5_hex( $url ).( $url =~ /(\.(jpg|png|tiff))$/i? $1 : 'jpg' );
+                        push @images_new, $filename;
+                        next if -e $path.$filename;
+                        getstore( $url, $path.$filename );
+                        resize( $path.$filename, "$path/$_/$filename", split( 'x', $_ ) ) foreach @{ images('SIZE') };
+                    }
+                    sql( "UPDATE base_realtor_data SET `$i->{column_id}`=? 
+                          WHERE `$i->{column_id}`=?", join( ' ,', @images_new ), $images_to_update );
+                }
+            }
+            return redirect('realtor');
+        }
+        my $h = sql "SELECT * FROM base_realtor_config 
+                      WHERE column_id!=0 
+                      ORDER BY column_id";
+        process( 'admin/realtor/config.tpl', { headers => $h, } );
+    },
+
+    '/admin/realtor/import' => sub {
+        my ( $result, $header_line, $col_params );
+
+        return process( 'admin/realtor/import.tpl', { table => $result } ) if !param('file') && !param('google_spreadsheet');
+
+        my $filename = $::q->tmpFileName( 'file' );
+
+        if ( param('google_spreadsheet') =~ m%.*spreadsheets/(.+)/% ) {
+            mkdir $::CONFIG->{cache_dir} unless -d $::CONFIG->{cache_dir};
+            $filename = $::CONFIG->{cache_dir}.'/googledocs.tsv';
+            getstore( "https://docs.google.com/spreadsheets/$1/export?format=tsv", $filename );
+            param_set( 'file', $filename );
+        }
+
+        if ( param('file') =~ /\.xls$/ ) {
+            my $parser   = Spreadsheet::ParseExcel->new();
+            my $workbook = $parser->parse( $filename );
+            my ( $sheet ) = $workbook->worksheets();
+            for my $row ( 0 .. $sheet->row_range() ) {
+                for my $col ( 0 .. $sheet->col_range() ) {
+                    my $cell = $sheet->get_cell( $row, $col );
+                    $result->[ $row ][ $col ] = ( $cell )? $cell->value() : '';
+                }
+            }
+        }
+
+        if ( param('file') =~ /\.xlsx$/ ) {
+            my $parser = eval{ Spreadsheet::XLSX -> new ( $filename ) };
+            return $@ if $@;
+            my ( $sheet ) = @{$parser->{Worksheet}};
+            for my $row ( 0 .. $sheet->{MaxRow} ) {
+                for my $col ( 0 .. $sheet->{MaxCol} ) {
+                    my $cell = $sheet->{ Cells }[ $row ][ $col ];
+                    $result->[ $row ][ $col ] = ( $cell )? $cell->{Val} : '';
+                }
+            }
+        }
+
+        if ( param('file') =~ /\.(t|c)sv$/ ) {
+            my $sep = $1 eq 't'? "\t" : ',';
+            my $csv = Text::CSV->new( { sep_char => $sep, allow_loose_quotes => 1 } );
+            open( my $data, '<:utf8', $filename ) or return "Could not open csv file: $!\n";
+            my $row = 0;
+            while ( my $line = <$data> ) {
+                chomp $line;
+                if ( $csv->parse( $line ) ) {
+                    $result->[ $row++ ] = [ $csv->fields() ];
+                } else {
+                    return "Line could not be parsed ( ".$csv->error_diag()." ) : $line\n";
+                }
+            }
+            close $data;
+        }
+
+        for my $row ( 0 .. @$result-1 ) {
+            for my $col ( 0 .. @{$result->[$row]}-1 ) {
+                next unless $header_line;
+                $result->[ $header_line ][ $col ] ||= '';
+                $col_params->[ $col ] = column_looks_like( $col_params->[ $col ], $result->[ $row ][ $col ] );
+            }
+            $header_line = $row if !$header_line && grep { $_ } @{$result->[ $row ]};
+        }
+        $col_params->[ 0 ]{type} = 'url';
+
+        if ( $header_line ) {
+            sql "UPDATE base_realtor_config SET column_id=0";
+            my %header_types = map { $_->{name} => $_ }
+                                   @{sql "SELECT * FROM base_realtor_config"};
+            my $i = 0;
+            foreach( @{ $result->[ $header_line ] } ) {
+                utf8::encode( $_ );
+                if ( $header_types{ $_ } ) {
+                    sql( "UPDATE base_realtor_config SET column_id=? WHERE name=?", ++$i, $_ );
+                    next;
+                } else {
+                    sql( "INSERT INTO base_realtor_config ( column_id, name, type, dimension, hidden, details_hide, pdf_hide )
+                          VALUES ( ?, ?, ?, ?, ?, ?, ? )", ++$i, $_, $col_params->[$i-1]{type}, '', 0, 0, 0 );
+                }
+            }
+
+            sql 'DROP TABLE IF EXISTS base_realtor_data';
+            my $i = 1;
+            my @fl = map { "`".($i++)."` ".($_->{datatype} || 'blob') } @$col_params;
+            sql 'CREATE TABLE base_realtor_data ('.( join ',', @fl ).');';
+            for my $i ( $header_line+1 .. @$result ) {
+                my $k = @{ $result->[ $header_line ] }-1;
+                next unless join '', @{$result->[ $i ]}[0..$k];
+                sql ( "INSERT INTO base_realtor_data
+                        VALUES ( ".( join ',', map {'?'} 0..$k ) ." )",
+                        @{$result->[ $i ]}[0..$k] );
+            }
+            return redirect2('admin/realtor/config');
+        }
+
+    },
+
+};
