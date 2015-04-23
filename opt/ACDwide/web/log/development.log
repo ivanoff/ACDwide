@@ -1045,3 +1045,13 @@
 [Thu Apr 23 00:07:24 2015] [debug] Rendering template "operators/index.html.ep".
 [Thu Apr 23 00:07:24 2015] [debug] Rendering template "layouts/default.html.ep".
 [Thu Apr 23 00:07:25 2015] [debug] 200 OK (0.128496s, 7.782/s).
+[Thu Apr 23 06:56:30 2015] [debug] GET /operators (Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:37.0) Gecko/20100101 Firefox/37.0).
+[Thu Apr 23 06:56:30 2015] [debug] Routing to controller "AcdWideWeb::Operators" and action "index".
+[Thu Apr 23 06:56:30 2015] [debug] Rendering template "operators/index.html.ep".
+[Thu Apr 23 06:56:30 2015] [debug] Rendering template "layouts/default.html.ep".
+[Thu Apr 23 06:56:30 2015] [debug] 200 OK (0.252053s, 3.967/s).
+[Thu Apr 23 07:05:20 2015] [debug] GET /operators (Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:37.0) Gecko/20100101 Firefox/37.0).
+[Thu Apr 23 07:05:20 2015] [debug] Routing to controller "AcdWideWeb::Operators" and action "index".
+[Thu Apr 23 07:05:20 2015] [debug] Rendering template "operators/index.html.ep".
+[Thu Apr 23 07:05:20 2015] [debug] Rendering template "layouts/default.html.ep".
+[Thu Apr 23 07:05:20 2015] [debug] 200 OK (0.112491s, 8.890/s).

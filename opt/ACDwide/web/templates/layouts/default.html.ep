@@ -23,13 +23,16 @@
           <h2><a href="/operators">Operators</a></h2>
         </li>
         <li>
-          <h2><a href="#">Portfolio</a></h2>
+          <h2><a href="/services">Services</a></h2>
         </li>
         <li>
-          <h2><a href="#">Our Team</a></h2>
+          <h2><a href="/access">Access</a></h2>
         </li>
         <li>
-          <h2><a href="#">Location</a></h2>
+          <h2><a href="/blacklist">Blacklist</a></h2>
+        </li>
+        <li>
+          <h2><a href="/online">Online</a></h2>
         </li>
       </ul>
     </menu>
