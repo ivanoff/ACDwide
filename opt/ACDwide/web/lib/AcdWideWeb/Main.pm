@@ -1,8 +1,6 @@
-package AcdWideWeb::Example;
+package AcdWideWeb::Main;
 use Mojo::Base 'Mojolicious::Controller';
 
-use Net::Domain;
-# This action will render a template
 sub welcome {
   my $self = shift;
 

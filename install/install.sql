@@ -498,7 +498,7 @@ CREATE TABLE queues (
     id integer NOT NULL,
     service_id integer,
     weight integer,
-    bussy integer,
+    busy integer,
     "time" timestamp without time zone,
     number text,
     channel text,
@@ -638,6 +638,65 @@ CREATE SEQUENCE summary_agents_calls_sac_id_seq
 
 
 ALTER TABLE public.summary_agents_calls_sac_id_seq OWNER TO acdwide;
+
+
+-----
+-- CREATING VIEWS
+-----
+
+CREATE VIEW operators_working_count_all
+AS SELECT COUNT(*) as c, se.name as name 
+FROM operators_working ol 
+LEFT JOIN operators_services os ON (ol.operator_id=os.operator_id)
+LEFT JOIN services se ON (os.service_id=se.id)
+GROUP BY name;
+
+ALTER VIEW public.operators_working_count_all OWNER TO acdwide;
+
+
+CREATE VIEW operators_working_count_free
+AS SELECT COUNT(*) as c, se.name as name
+FROM operators_working ol 
+LEFT JOIN operators_services os ON (ol.operator_id=os.operator_id)
+LEFT JOIN services se ON (os.service_id=se.id)
+WHERE ol.status = 1 AND ol.timestamp < extract(epoch from now())
+GROUP BY name;
+
+ALTER VIEW public.operators_working_count_free OWNER TO acdwide;
+
+
+CREATE VIEW operators_last_vip_service
+AS SELECT COUNT(*) AS c, MAX(ol.operator_id) AS operator_id 
+FROM operators_services os 
+INNER JOIN services sr ON (sr.id=os.service_id) 
+INNER JOIN operators_working ol ON (ol.operator_id=os.operator_id) 
+WHERE sr.weight>=100 AND status=1 
+GROUP BY name;
+
+ALTER VIEW public.operators_last_vip_service OWNER TO acdwide;
+
+
+CREATE VIEW client_queue_next
+AS SELECT min(qu.id) FROM queues qu  
+JOIN operators_services os ON (os.service_id = qu.service_id) 
+JOIN operators_working ow ON (ow.operator_id = os.operator_id) 
+WHERE qu.busy=0 AND ow.status=1
+GROUP BY qu.service_id, qu.weight
+ORDER by qu.weight DESC;
+
+ALTER VIEW public.client_queue_next OWNER TO acdwide;
+
+
+CREATE VIEW operators_free_online
+AS SELECT op.operator_id, sr.weight, op.timestamp, sr.id
+FROM operators_working op 
+INNER JOIN operators_services os ON (op.operator_id=os.operator_id)
+INNER JOIN services sr ON (sr.id=os.service_id)
+WHERE op.status=1 
+ORDER BY os.weigth DESC, op.timestamp ASC;
+
+ALTER VIEW public.operators_free_online OWNER TO acdwide;
+
 
 --
 -- TOC entry 1885 (class 2604 OID 62385)
@@ -782,7 +841,7 @@ SELECT pg_catalog.setval('calls_id1_seq', 1, false);
 -- Name: calls_id1_seq1; Type: SEQUENCE SET; Schema: public; Owner: acdwide
 --
 
-SELECT pg_catalog.setval('calls_id1_seq1', 46, true);
+SELECT pg_catalog.setval('calls_id1_seq1', 1, true);
 
 
 --
@@ -828,7 +887,7 @@ COPY languages (id, name, name_short) FROM stdin;
 -- Name: languages_id_seq; Type: SEQUENCE SET; Schema: public; Owner: acdwide
 --
 
-SELECT pg_catalog.setval('languages_id_seq', 1, false);
+SELECT pg_catalog.setval('languages_id_seq', 9, false);
 
 
 --
@@ -849,7 +908,7 @@ COPY location (id, name, ip) FROM stdin;
 -- Name: location_id_seq; Type: SEQUENCE SET; Schema: public; Owner: acdwide
 --
 
-SELECT pg_catalog.setval('location_id_seq', 2, true);
+SELECT pg_catalog.setval('location_id_seq', 3, true);
 
 
 --
@@ -869,7 +928,7 @@ COPY managers (id, name) FROM stdin;
 -- Name: managers_id_seq; Type: SEQUENCE SET; Schema: public; Owner: acdwide
 --
 
-SELECT pg_catalog.setval('managers_id_seq', 1, false);
+SELECT pg_catalog.setval('managers_id_seq', 2, false);
 
 
 --
@@ -881,6 +940,7 @@ SELECT pg_catalog.setval('managers_id_seq', 1, false);
 COPY operators (id, name, password, manager_id, date_hire, date_fired, can_outgoing) FROM stdin;
 1	John Dumas	3144	1	2015-03-22	\N	1
 2	Lara Victoria	8181	1	2015-03-22	\N	0
+3	Peter Newman	8182	1	2015-03-24	\N	0
 \.
 
 
@@ -890,7 +950,7 @@ COPY operators (id, name, password, manager_id, date_hire, date_fired, can_outgo
 -- Name: operators_id_seq; Type: SEQUENCE SET; Schema: public; Owner: acdwide
 --
 
-SELECT pg_catalog.setval('operators_id_seq', 2, true);
+SELECT pg_catalog.setval('operators_id_seq', 4, true);
 
 
 --
@@ -912,7 +972,7 @@ COPY operators_languages (id, operator_id, lang_id) FROM stdin;
 -- Name: operators_languages_id_seq; Type: SEQUENCE SET; Schema: public; Owner: acdwide
 --
 
-SELECT pg_catalog.setval('operators_languages_id_seq', 1, true);
+SELECT pg_catalog.setval('operators_languages_id_seq', 4, true);
 
 
 --
@@ -934,7 +994,7 @@ COPY operators_services (id, service_id, operator_id, weigth) FROM stdin;
 -- Name: operators_services_id_seq; Type: SEQUENCE SET; Schema: public; Owner: acdwide
 --
 
-SELECT pg_catalog.setval('operators_services_id_seq', 3, true);
+SELECT pg_catalog.setval('operators_services_id_seq', 4, true);
 
 
 --
@@ -953,7 +1013,7 @@ COPY operators_working (id, operator_id, "time", status, location, calls, calls_
 -- Name: operators_working_id_seq; Type: SEQUENCE SET; Schema: public; Owner: acdwide
 --
 
-SELECT pg_catalog.setval('operators_working_id_seq', 17, true);
+SELECT pg_catalog.setval('operators_working_id_seq', 1, true);
 
 
 --
@@ -962,7 +1022,7 @@ SELECT pg_catalog.setval('operators_working_id_seq', 17, true);
 -- Data for Name: queues; Type: TABLE DATA; Schema: public; Owner: acdwide
 --
 
-COPY queues (id, service_id, weight, bussy, "time", number, channel, time_from, "timestamp", timestamp_from) FROM stdin;
+COPY queues (id, service_id, weight, busy, "time", number, channel, time_from, "timestamp", timestamp_from) FROM stdin;
 \.
 
 
@@ -972,7 +1032,7 @@ COPY queues (id, service_id, weight, bussy, "time", number, channel, time_from, 
 -- Name: queues_id_seq; Type: SEQUENCE SET; Schema: public; Owner: acdwide
 --
 
-SELECT pg_catalog.setval('queues_id_seq', 46, true);
+SELECT pg_catalog.setval('queues_id_seq', 1, true);
 
 
 --
@@ -991,7 +1051,7 @@ COPY records (id, date, file_name, uniqueid, context, extension, callerid) FROM 
 -- Name: records_id_seq; Type: SEQUENCE SET; Schema: public; Owner: acdwide
 --
 
-SELECT pg_catalog.setval('records_id_seq', 35, true);
+SELECT pg_catalog.setval('records_id_seq', 1, true);
 
 
 --
@@ -1012,7 +1072,7 @@ COPY services (id, name, weight, message, service_order, access_type, extensions
 -- Name: services_id_seq; Type: SEQUENCE SET; Schema: public; Owner: acdwide
 --
 
-SELECT pg_catalog.setval('services_id_seq', 5, true);
+SELECT pg_catalog.setval('services_id_seq', 3, true);
 
 
 --
@@ -1025,6 +1085,36 @@ SELECT pg_catalog.setval('summary_agents_calls_sac_id_seq', 1, false);
 
 
 --
+-- TOC entry 1922 (class 2606 OID 62403)
+-- Dependencies: 171 171 2081
+-- Name: languages_pkey; Type: CONSTRAINT; Schema: public; Owner: acdwide; Tablespace: 
+--
+
+ALTER TABLE ONLY agents_logs
+    ADD CONSTRAINT agents_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 1922 (class 2606 OID 62403)
+-- Dependencies: 171 171 2081
+-- Name: languages_pkey; Type: CONSTRAINT; Schema: public; Owner: acdwide; Tablespace: 
+--
+
+ALTER TABLE ONLY calls
+    ADD CONSTRAINT calls_pkey PRIMARY KEY (id1);
+
+
+--
+-- TOC entry 1922 (class 2606 OID 62403)
+-- Dependencies: 171 171 2081
+-- Name: languages_pkey; Type: CONSTRAINT; Schema: public; Owner: acdwide; Tablespace: 
+--
+
+ALTER TABLE ONLY calls_rules
+    ADD CONSTRAINT calls_rules_pkey PRIMARY KEY (id);
+
+
+--
 -- TOC entry 1903 (class 2606 OID 62397)
 -- Dependencies: 161 161 161 161 161 2081
 -- Name: agents_logs_dt_key; Type: CONSTRAINT; Schema: public; Owner: acdwide; Tablespace: 
@@ -1032,6 +1122,16 @@ SELECT pg_catalog.setval('summary_agents_calls_sac_id_seq', 1, false);
 
 ALTER TABLE ONLY agents_logs
     ADD CONSTRAINT agents_logs_dt_key UNIQUE (dt, agent, event, callerid);
+
+
+--
+-- TOC entry 1922 (class 2606 OID 62403)
+-- Dependencies: 171 171 2081
+-- Name: languages_pkey; Type: CONSTRAINT; Schema: public; Owner: acdwide; Tablespace: 
+--
+
+ALTER TABLE ONLY operators_working
+    ADD CONSTRAINT operators_working_pkey PRIMARY KEY (id);
 
 
 --
@@ -1314,7 +1414,7 @@ CREATE INDEX operators_working_idx2 ON operators_working USING btree (operator_i
 -- Name: queues_idx1; Type: INDEX; Schema: public; Owner: acdwide; Tablespace: 
 --
 
-CREATE INDEX queues_idx1 ON queues USING btree (bussy, service_id);
+CREATE INDEX queues_idx1 ON queues USING btree (busy, service_id);
 
 
 --
@@ -1341,7 +1441,7 @@ CREATE INDEX queues_idx3 ON queues USING btree (service_id, weight);
 -- Name: queues_idx4; Type: INDEX; Schema: public; Owner: acdwide; Tablespace: 
 --
 
-CREATE INDEX queues_idx4 ON queues USING btree (bussy, id, service_id);
+CREATE INDEX queues_idx4 ON queues USING btree (busy, id, service_id);
 
 
 --
@@ -1361,6 +1461,15 @@ CREATE INDEX records_idx ON records USING btree (file_name);
 
 CREATE INDEX services_idx ON services USING btree (name);
 
+
+--
+-- TOC entry 1979 (class 2606 OID 28688)
+-- Dependencies: 1973 186 178 2114
+-- Name: fk_services_operators_services; Type: FK CONSTRAINT; Schema: public; Owner: acdwide
+--
+
+ALTER TABLE ONLY operators_services
+    ADD CONSTRAINT services_operators_services_fkey FOREIGN KEY (service_id) REFERENCES services(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 --
 -- TOC entry 1948 (class 2606 OID 62442)

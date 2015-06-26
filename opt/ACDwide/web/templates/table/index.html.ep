@@ -1,0 +1,160 @@
+% layout 'default';
+% title $title;
+
+<script>
+var app = angular.module("instantTable", []);
+app.filter('searchFor', function(){
+    return function(arr, searchString){
+        if(!searchString){
+            return arr;
+        }
+        var result = [];
+        searchString = searchString.toLowerCase();
+        angular.forEach(arr, function(item){
+            if( 0 == 1
+% foreach my $f ( @$fields ) { 
+                || ( item.<%= $f %>.toLowerCase().indexOf(searchString) !== -1 )
+% }
+            ){
+                result.push(item);
+            }
+        });
+        return result;
+    };
+});
+
+function post( $url, $data ){
+        var result = 0;
+        $.ajax({
+            type     : 'POST',
+            url      : $url,
+            data     : $data,
+            dataType : 'json',
+            async    : false,
+            success  : function( data ) {
+                if ( !data.error ) {
+                    result = data.id || 1;
+                } else {
+                    alert( data.error );
+                }
+            },
+            fail     : function( data ) {
+                alert( 'connect error' );
+            }
+        });
+        return result;
+}
+
+app.controller('InstantTableController', ['$scope', function($scope) {
+    $scope.items = [
+% foreach my $op ( @$info ) { 
+{
+%   foreach my $f ( @$fields ) { 
+      <%= $f %>: '<%= $op->{_column_data}{$f} %>',
+%   }
+},
+% }
+    ];
+
+    $scope.submit = function( is_edit ) {
+        sublink = is_edit? 'edit' : 'add';
+<% foreach my $f ( @$fields ) { %> alert ( '<%= $f %>: ' + this.<%= $f %>); <% } %>
+        $scope.items_ready = post( '/operators/' + sublink, { <% foreach my $f ( @$fields ) { %> <%= $f %>: this.<%= $f %>,<% } %> } );
+        if ( $scope.items_ready ) {
+            $scope.items.push( {
+% foreach my $f ( @$fields ) { 
+                <%= $f %>: <%= ( $f eq $types->{id}[0] )? '$scope.items_ready' : "this.$f"; %>,
+% }
+            } );
+            $scope.clear();
+        };
+    };
+
+    $scope.clear = function() {
+% foreach my $f ( @$fields ) { 
+        $( "input[name='<%= $f %>']" ).val( '' );
+% }
+    };
+
+    $scope.edit_record = function($i,$p) {
+% foreach my $f ( @$fields ) { 
+        $( "input[name='<%= $f %>']" ).val( $i.<%= $f %> );
+% }
+        $p.showme_form_header_edit=true;
+        $p.showme_form=true;
+    };
+
+}]);
+
+app.controller('RemoveRecordController', ['$scope', function($scope) {
+    $scope.remove_record = function() {
+        var remove_id = $scope.i.<%= $types->{id}[0] %>;
+        $scope.items_ready = post( '/operators/remove', { <%= $types->{id}[0] %>: remove_id } );
+        if ( $scope.items_ready ) {
+            var j = $scope.items.length;
+            while (j--) {
+                if ( $scope.items[j].id == remove_id ) {
+                    $scope.items.splice(j, 1);
+                }
+            }
+        };
+    };
+}]);
+
+</script>
+
+<div ng-app="instantTable" ng-controller="InstantTableController">
+
+    <div class="filter">
+        <input type="text" ng-model="searchString" placeholder="<%= l('Enter your search terms') %>" /> 
+    </div>
+
+    <div ng-hide="showme_form">
+        <button ng-click="showme_form=true;showme_form_header_edit=false;"><%= l('Add new record') %></button>
+    </div>
+
+    <div class="record_form" ng-show="showme_form">
+<h3 ng-hide="showme_form_header_edit"><%= l('Add new record') %></h3>
+<h3 ng-show="showme_form_header_edit"><%= l('Edit record') %></h3>
+        <form ng-submit="submit(showme_form_header_edit)">
+% my $op = shift @$info;
+% foreach my $f ( @$fields ) { 
+%   if ( grep { $_ eq $f } @{ $types->{hidden} } ) {
+        <input type="hidden" name="<%= $f %>" ng-model="<%= $f %>" />
+%   } else {
+        <%= l( $f ) %>: <input type="text" name="<%= $f %>" ng-model="<%= $f %>" placeholder="<%= $op->{_column_data}{$f}%>" /><br />
+%   }
+% }
+        <button type="submit" id="submit"><%= l('Save') %></button>
+        <button type="button" ng-click="showme_form=false;clear();"><%= l('Cancel') %></button>
+        </form>
+
+    </div>
+
+    <table id="keywords">
+    <thead><tr>
+        <th></th>
+% foreach my $f ( @$fields ) { 
+% next if grep { $_ eq $f } @{ $types->{hidden} };
+<th ng-class="ord=='<%= $f %>'?thc:'';"><span ng-click="ord='<%= $f %>'; rev=!rev; thc=rev?'sortUp':'sortDown'"><%= l( $f ) %></span></th>
+% }
+        <th></th>
+    </tr></thead>
+    <tbody>
+        <tr ng-repeat="i in items | searchFor:searchString | orderBy:ord:rev ">
+            <td>
+                <button ng-click="edit_record(i,$parent)"><%= l('edit') %></button>
+            </td>
+% foreach my $f ( @$fields ) { 
+% next if grep { $_ eq $f } @{ $types->{hidden} };
+            <td>{{i.<%= $f %>}}</td>
+% }
+            <td ng-controller="RemoveRecordController">
+                <button ng-click="remove_record()"><%= l('remove') %></button>
+            </td>
+        </tr>
+    </tbody>
+    </table>
+
+</div>
+

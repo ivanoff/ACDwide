@@ -1,0 +1,7 @@
+% layout 'default';
+% title 'add';
+
+% my $op = shift @$info;
+% foreach my $f ( @$fields ) { 
+<%= $f %>: <input type="text" name="<%= $f %>" placeholder="<%= $op->{_column_data}{$f}%>" /><br />
+% }

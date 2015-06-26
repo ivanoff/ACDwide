@@ -4,46 +4,47 @@
 <title><%= title %></title>
 <link rel="stylesheet" href="/css/main.css" />
 <meta charset="utf-8" />
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.27/angular.min.js"></script>
+<link href="http://fonts.googleapis.com/css?family=Droid+Serif:400,400italic,700,700italic" rel="stylesheet" type="text/css">
 </head>
 <body>
 <header>
   ACDwide manager
   <ul id="utility-links" class="menu">
-    <li><a href="#">about</a></li>
-    <li><a href="#">contact</a></li>
+    <li><a href="#"><%= l('about') %></a></li>
+    <li><a href="#"><%= l('contact') %></a></li>
   </ul>
 </header>
 <nav>
     <menu>
       <ul id="nav-links">
         <li>
-          <h2><a href="/">Home</a></h2>
+          <h2><a href="/"><%= l('Home') %></a></h2>
         </li>
         <li>
-          <h2><a href="/operators">Operators</a></h2>
+          <h2><a href="/operators"><%= l('Operators') %></a></h2>
         </li>
         <li>
-          <h2><a href="/services">Services</a></h2>
+          <h2><a href="/services"><%= l('Services') %></a></h2>
         </li>
         <li>
-          <h2><a href="/access">Access</a></h2>
+          <h2><a href="/access"><%= l('Access') %></a></h2>
         </li>
         <li>
-          <h2><a href="/blacklist">Blacklist</a></h2>
+          <h2><a href="/blacklist"><%= l('Blacklist') %></a></h2>
         </li>
         <li>
-          <h2><a href="/online">Online</a></h2>
+          <h2><a href="/online"><%= l('Online') %></a></h2>
         </li>
       </ul>
     </menu>
 </nav>
 <section>
-    <div id="leftcontent">
     <div class="grey_line"></div>
 
 <%= content %>
 
-    </div>
 </section>
 <footer>&copy; Copyright with Company.com 2015</footer>
 </body>

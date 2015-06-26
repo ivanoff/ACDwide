@@ -3,14 +3,14 @@
  margin: 0;
 }
 body {
- font-family: Arial, Helvetica, sans-serif;
+ font-family: 'Droid Serif', serif;
  color: #555555;
  background-color: #FFFFFF;
- font-size: 16px;
+ font-size: 18px;
 }
 section {
- width: 90%;
- margin: 0 auto;
+ margin: 50px 10px 0 20px;
+ min-height: 300px;
 }
 nav {
  margin: 0px 5px 0px 5px;
@@ -25,15 +25,15 @@ header {
  margin: 0px 10px 0px 5px;
  text-align: left;
  color: #fff;
- font-size: 20px;
+ font-size: 1.6em;
  font-weight: bold;
  padding: 8px 18px 4px 15px;
- height: 30px;
- background-color: #12938f;
+ height: 40px;
+ background-color: #02736f;
  border-radius: 0 0 15px 15px;
 }
 header .menu {
- font-size: 12px;
+ font-size: 0.5em;
  float: right;
  text-align: right;
 }
@@ -43,22 +43,12 @@ header .menu {
  background-color: #D2E0D5;
  border-radius: 2px;
 }
-#leftcontent {
- margin: 0px 5px 0px 0px;
- display: inline;
- padding: 4px;
- float: left;
- min-height: 300px;
-}
 footer {
  margin: 0px 5px 5px 5px;
- display: inline;
  padding: 17px;
- float: left;
  color: #fff;
  font-weight: bold;
- width: 95%;
- background-color: #12938f;
+ background-color: #02635f;
  border-radius: 20px;
 }
 ul#utility-links li {
@@ -83,27 +73,131 @@ ul#utility-links li a:hover{
  text-decoration: underline;
 }
 h2 a:link {
- font-size: 15px;
+ font-size: 1.5em;
  text-decoration: none;
- color: #12938f;
+ color: #02534f;
 }
 h2 a:visited {
- font-size: 15px;
  text-decoration: none;
- color: #12938f;
+ color: #02534f;
 }
 h1 {
  font-size: 21px;
- color: #12938f;
+ color: #02534f;
 }
 h2 {
  font-size: 15px;
  display: inline;
- color: #12938f;
+ color: #02534f;
 }
 img {
  border: none;
 }
 .text {
  margin: 0px 5px 0px 5px;
+}
+
+.filter input{
+ background:#fff no-repeat 13px 13px;
+ background-image:url(/images/filter.png);
+ border: none;
+ width: 250px;
+ line-height: 17px;
+ padding: 10px 0;
+ margin: 0 0 10px 0;
+ border-radius: 4px;
+ box-shadow: 0 2px 8px #A4A4A4 inset;
+ text-align: left;
+ font-size: 0.8em;
+ color: #334249;
+ font-weight: bold;
+ outline: none;
+ text-indent: 40px;
+}
+
+table { border-collapse: collapse; border-spacing: 0; }
+img { border: 0; max-width: 100%; }
+#keywords {
+  font-size: 1.05em;
+  margin-bottom: 15px;
+}
+#keywords thead {
+  cursor: pointer;
+  background: #D2F3F0;
+}
+#keywords thead tr th { 
+  font-weight: bold;
+  padding: 12px 30px;
+  padding-left: 42px;
+}
+#keywords thead tr th span { 
+  padding-right: 20px;
+  background-repeat: no-repeat;
+  background-position: 100% 100%;
+}
+#keywords thead tr th.sortUp, #keywords thead tr th.sortDown {
+  background: #92D3Cf;
+  border-radius: 15px 15px 0 0;
+}
+#keywords thead tr th.sortUp span {
+  background-image: url('/images/SP99ZPJ.png');
+}
+#keywords thead tr th.sortDown span {
+  background-image: url('/images/RkA9MBo.png');
+}
+#keywords tbody tr { 
+  color: #555;
+}
+#keywords tbody tr td {
+  text-align: center;
+  padding: 15px 10px;
+}
+#keywords tbody tr td.lalign {
+  text-align: left;
+}
+
+button {
+ display:inline-block;
+ padding:6px 12px;
+ margin-bottom:0;
+ font-size:14px;
+ font-weight:400;
+ line-height:1.42857143;
+ text-align:center;
+ white-space:nowrap;
+ vertical-align:middle;
+ -ms-touch-action:manipulation;
+ touch-action:manipulation;
+ cursor:pointer;
+ -webkit-user-select:none;
+ -moz-user-select:none;
+ -ms-user-select:none;
+ user-select:none;
+ background-image:none;
+ border:1px solid transparent;
+ border-radius:4px;
+ border-color:#adadad
+}
+button.active.focus,button.active:focus,button.focus,button:active.focus,button:active:focus,button:focus {
+ outline:thin dotted;
+ outline:5px auto -webkit-focus-ring-color;
+ outline-offset:-2px
+}
+button.focus,button:focus,button:hover {
+ color:#333;
+ text-decoration:none
+}
+button.active,button:active {
+ background-image:none;
+ outline:0;
+ -webkit-box-shadow:inset 0 3px 5px rgba(0,0,0,.125);
+ box-shadow:inset 0 3px 5px rgba(0,0,0,.125)
+}
+button.disabled,button[disabled],fieldset[disabled] button {
+ pointer-events:none;
+ cursor:not-allowed;
+ filter:alpha(opacity=65);
+ -webkit-box-shadow:none;
+ box-shadow:none;
+ opacity:.65
 }

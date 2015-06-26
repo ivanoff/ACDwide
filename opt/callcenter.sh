@@ -1,6 +1,7 @@
 #!/bin/bash
 
-pid=`cat /var/run/callcenter.pid`
+pid=`cat /var/run/callcenter.pid 2>/dev/null`
+echo $pid
 COMMAND="$1"
 
 case $COMMAND in
