@@ -2,7 +2,7 @@
 
 use strict;
 use utf8;
-use Test::More tests => 12;
+use Test::More tests => 18;
 
 use lib '../';
 use ACDwide::Logs;
@@ -43,5 +43,16 @@ ok( /ACDwide.test_tmp - Info message/, "Saved info message" );
 ok( $log->{test_tmp}->error("Error message"), "Log error message" );
 $_ = `cat $conf->{ 'files_test_tmp' }`;
 ok( /ACDwide.test_tmp - Error message/, "Saved error message" );
+
+ok( $log->debug("Debug message 2", "test_tmp"), "Log second debug message" );
+$_ = `cat $conf->{ 'files_test_tmp' }`;
+ok( /ACDwide.test_tmp - Debug message 2/, "Saved second debug message" );
+
+ok( $log->uniqueid( 123 ) eq 123, "Set unique id" );
+ok( $log->uniqueid eq 123, "unique id is 123" );
+
+ok( $log->debug("Debug message", "test_tmp"), "Log debug message with id" );
+$_ = `cat $conf->{ 'files_test_tmp' }`;
+ok( /ACDwide.test_tmp - \[123\] Debug message/, "Saved debug message with id" );
 
 unlink $conf->{ 'files_test_tmp' };

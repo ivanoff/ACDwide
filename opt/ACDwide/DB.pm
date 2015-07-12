@@ -319,6 +319,13 @@ sub check_white_list {
     return $self->check_black_list( $number, 'white' );
 }
 
+sub message_by_service_id {
+    my ( $self, $service_id ) = @_;
+    my $res = $self->{_handler}->resultset( 'Service' )
+                   ->search( { id => $service_id } )->first;
+    return $res? $res->message : '';
+}
+
 # add incoming to queue
 sub client_queue_add {
     my ( $self, $p ) = @_;

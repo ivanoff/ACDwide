@@ -40,14 +40,22 @@ sub new {
     return $self;
 }
 
+sub uniqueid {
+    my ( $self, $id ) = @_;
+    return $self->{_ID} unless $id;
+    return ( $self->{_ID} = $id );
+}
+
 sub debug {
-    my ( $self, $text ) = @_;
-    $log->{log}->debug( $text );
+    my ( $self, $text, $logger ) = @_;
+    $logger ||= 'log';
+    $text = "[".$self->uniqueid."] $text" if $self->uniqueid;
+    $self->{ $logger }->debug( $text );
 }
 
 sub call {
     my ( $self, $text ) = @_;
-    $log->{callers_dump}->debug( $text );
+    $self->debug( $text, 'callers_dump' );
 }
 
 1;

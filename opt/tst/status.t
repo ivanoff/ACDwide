@@ -2,7 +2,7 @@
 
 use strict;
 use utf8;
-use Test::More tests => 9;
+use Test::More tests => 10;
 
 use lib '../';
 use ACDwide::Statuses qw{ $STATUS };
@@ -14,9 +14,10 @@ require_ok( 'ACDwide::Statuses' );
 
 ok( $STATUS, 'statuses is defined' );
 
-ok( $STATUS->{ free },    'free status is defined' );
-ok( $STATUS->{ busy },    'busy status is defined' );
-ok( $STATUS->{ ringing }, 'ringing status is defined' );
+ok( $STATUS->{ locked } == 0, 'locked status is defined' );
+ok( $STATUS->{ free },        'free status is defined' );
+ok( $STATUS->{ busy },        'busy status is defined' );
+ok( $STATUS->{ ringing },     'ringing status is defined' );
 
 ok( $STATUS->{ login_event  }, 'login event status is defined' );
 ok( $STATUS->{ logout_event }, 'logout event status is defined' );

@@ -2,7 +2,7 @@
 
 use strict;
 use utf8;
-use Test::More tests => 173;
+use Test::More tests => 175;
 
 use lib '../';
 use ACDwide::DB;
@@ -181,6 +181,9 @@ ok( !$db->operator_password_by_id( $ids->{Operator}+1 ), 'No Operator_id+1' );
 
 ok(  $db->get_service_by_service_name( $tables->{Service}{name} )->{weight} eq $tables->{Service}{weight}, 'Get service weigth by name' );
 ok( !$db->get_service_by_service_name( 'NoServiceName' )->{weight}, 'Service not found' );
+
+ok(  $db->message_by_service_id( 2  ), 'Got message by service id' );
+ok( !$db->message_by_service_id( -1 ), 'Message by service id not found' );
 
 ok(  $db->message_white_list( $tables->{CallsRule}{number} ) eq $tables->{CallsRule}{text}, 'Get whitelist text' );
 ok( !$db->message_white_list( $tables->{CallsRule}{number}.'1' ), 'No whitelist text for unknown' );
